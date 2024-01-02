@@ -77,7 +77,7 @@ def set_stereo_panning(sound, panning):
 # Function 3: Adjust pitch
 def set_pitch(sound, pitch):
 	new_sample_rate = int(sound.frame_rate * (2 ** pitch))
-	return sound._spawn(sound.raw_data, overrides={"	frame_rate"	: new_sample_rate})
+	return sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
 
 # Function 4: Adjust volume
 def set_volume(sound, volume):
@@ -118,7 +118,7 @@ def ash(sound_path, heading):
 
 	return sound
 
-def repeatSound(times, sound_file="	beep.wav"	):
+def repeatSound(times, sound_file='beep.wav'):
 	try:
 		# Load the sound file
 		sound = AudioSegment.from_file(sound_file)
@@ -218,62 +218,38 @@ def edit_Rear_Temps():
 		print("Please enter a valid integer.")
 
 def edit_Speed_Monitor():
-	if keyboard.is_pressed("	s"	):
+	if keyboard.is_pressed('s'):
 		add_or_remove()
 def edit_TF_Monitor():
-	if keyboard.is_pressed("	f"	):
+	if keyboard.is_pressed('f'):
 		edit_Front_Temps()
 def edit_TR_Monitor():
-	if keyboard.is_pressed("	r"	):
+	if keyboard.is_pressed('r'):
 		edit_Rear_Temps()
 
 def edit_Elevation_Monitor():
-	if keyboard.is_pressed("	e"	):
+	if keyboard.is_pressed('e'):
 		edit_Elevation_Sense()
 
 def speaking_Toggle():
 	global speakingCompass
 	global speakingSpeed
 	global speakingElevation
-	global speakingTemp
-	global speakingSusp
-	global speakingGear
-	if keyboard.is_pressed("	v"	):
-		if speakingTemp == False:
-			speakingTemp = True
-			print("Screen reader announcements enabled for tire temps.")
-		else:
-			speakingTemp = False
-			print("Screen reader announcements disabled for tire temp.")
-	if keyboard.is_pressed("	b"	):
-		if speakingSusp == False:
-			speakingSusp = True
-			print("Screen reader announcements enabled for bottomed out suspension.")
-		else:
-			speakingSusp = False
-			print("Screen reader announcements disabled for bottomed out suspension.")
-	if keyboard.is_pressed("	n"	):
-		if speakingGear == False:
-			speakingGear = True
-			print("Screen reader announcements enabled for gears.")
-		else:
-			speakingGear = False
-			print("Screen reader announcements disabled for gears.")
-	if keyboard.is_pressed("	z"	):
+	if keyboard.is_pressed('z'):
 		if speakingCompass == False:
 			speakingCompass = True
 			print("Screen reader  compass enabled")
 		else:
 			speakingCompass = False
 			print("Screen reader compass disabled.")
-	if keyboard.is_pressed("	x"	):
+	if keyboard.is_pressed('x'):
 		if speakingSpeed == False:
 			speakingSpeed = True
 			print("Screen reader  speed enabled")
 		else:
 			speakingSpeed = False
 			print("Screen reader speed disabled.")
-	if keyboard.is_pressed("	c"	):
+	if keyboard.is_pressed('c'):
 		if speakingElevation == False:
 			speakingElevation = True
 			print("Screen reader  elevation enabled")
@@ -283,16 +259,44 @@ def speaking_Toggle():
 
 def audio_Compass_Toggle():
 	global audioCompass
-	if keyboard.is_pressed("	a"	):
+	if keyboard.is_pressed('a'):
 		if audioCompass == False:
 			audioCompass = True
 			print("Audio compass enabled")
 		else:
 			audioCompass = False
 			print("Audio compass disabled.")
+def susp_Toggle():
+	global suspAudio
+	if keyboard.is_pressed('r'):
+		if suspAudio == False:
+			suspAudio = True
+			print("Suspension audio enabled")
+		else:
+			suspAudio = False
+			print("Suspension audio disabled.")
+def temp_Toggle():
+	global tempAudio
+	if keyboard.is_pressed('f'):
+		if tempAudio == False:
+			tempAudio = True
+			print("Tire temp audio enabled")
+		else:
+			tempAudio= False
+			print("Tire temp audio disabled.")
+def gear_Toggle():
+	global gearAudio
+	if keyboard.is_pressed('g'):
+		if gearAudio == False:
+			gearAudio = True
+			print("Gear audio enabled")
+		else:
+			gearAudio = False
+			print("Gear audio disabled.")
+
 def measurement_Toggle():
 	global metric
-	if keyboard.is_pressed("	m"	):
+	if keyboard.is_pressed('m'):
 		if metric == False:
 			metric = True
 			print("Speed is now in kMPH.")
@@ -302,7 +306,7 @@ def measurement_Toggle():
 
 def elevation_Sensor_Toggle():
 	global elevationSensor
-	if keyboard.is_pressed("	w"	):
+	if keyboard.is_pressed('w'):
 		if elevationSensor == False:
 			elevationSensor = True
 			print("Elevation sensor enabled")
@@ -311,7 +315,7 @@ def elevation_Sensor_Toggle():
 			print("Elevation sensor disabled.")
 def speed_Monitor_Toggle():
 	global speedMon
-	if keyboard.is_pressed("	q"	):
+	if keyboard.is_pressed('q'):
 		if speedMon == False:
 			speedMon = True
 			print("Speed monitor enabled.")
@@ -321,7 +325,7 @@ def speed_Monitor_Toggle():
 
 
 
-# Set the server"	s port
+# Set the server's port
 port = 5300
 
 # Create a socket object for UDP
@@ -338,7 +342,7 @@ try:
 		# Receive packets
 		data, addr = server_socket.recvfrom(332)  # Adjust buffer size if necessary
 		# Define the format string for unpacking
-		format_string = "	iI27f4i20f5i17fH6B4bfi"	
+		format_string = 'iI27f4i20f5i17fH6B4bfi'
 		edit_Speed_Monitor()
 		edit_Elevation_Monitor()
 		edit_TF_Monitor()
@@ -347,6 +351,9 @@ try:
 		if len(data) >= 0:
 			# Unpack the data according to the specified format
 			unpacked_data = struct.unpack(format_string, data[:struct.calcsize(format_string)])
+			execute_After(temp_Toggle,.15)
+			execute_After(susp_Toggle, .15)
+			execute_After(gear_Toggle,.15)
 			execute_After(audio_Compass_Toggle,.15)
 			execute_After(speed_Monitor_Toggle,.15)
 			execute_After(elevation_Sensor_Toggle,.15)
@@ -432,11 +439,11 @@ try:
 			if accel == 1:
 				print_Speak(speakingSpeed, str(exceed)+" MPH exceeded.")
 				if speedMon == True:
-					repeatSound(speedMonitor.index(exceed)+1, "	speed.wav"	)
+					repeatSound(speedMonitor.index(exceed)+1, 'speed.wav')
 			if accel == 0:
 				print_Speak(speakingSpeed, "Dropped below"+str(exceed+1))
 				if speedMon == True:
-					repeatSound(speedMonitor.index(exceed+1), "	speed.wav"	)
+					repeatSound(speedMonitor.index(exceed+1), 'speed.wav')
 		else:
 			print("Received data is shorter than expected format at "+str(len(data))+".")
 

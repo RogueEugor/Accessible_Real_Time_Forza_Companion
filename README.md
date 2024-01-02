@@ -9,7 +9,7 @@ To jump to a section, search for the following headings:
 ###Keyboard shortcuts
 
 ##Setting up
-    To set up ART FC launch Forza Motorsports and navigate to the 'game play and HUD' tab. Then turn on the 'data out' option. Arrow down to the 'Data Out IP Address" and input your computer's internal network IP address if you are on the Xbox console. If you are on PC you can use the local host address of '127.0.01'. Next, navigate down to the 'Data Out IP Port' option and set it to port '5300'. Finally, navigate to the 'Data Out Packet Format' option, and set it to 'Car Dash'. Now you are all set up and ready to use ART FC.
+    To set up ART FC launch Forza Motorsports and navigate to the 'game play and HUD' tab. Then turn on the 'data out' option. Arrow down to the 'Data Out IP Address" and input your computer's internal network IP address if you are on the Xbox console. If you are on PC you can use the local host address of '127.0.0.1'. Next, navigate down to the 'Data Out IP Port' option and set it to port '5300'. Finally, navigate to the 'Data Out Packet Format' option, and set it to 'Car Dash'. Now you are all set up and ready to use ART FC.
 ##Features
     Currently ART FC supports the current features:
 1. A compass - This can be read out by the screen reader, or you can have an audio queue that plays to indicate direction. You can also have both of these options enabled.

@@ -9,6 +9,27 @@ import accessible_output2.outputs.auto
 import threading
 import time
 #Variables
+preGear = 0
+bottomedFL = False
+bottomedFR = False
+bottomedRL = False
+bottomedRR = False
+maxTF = 200
+maxTR = 200
+frontMax = False
+rearMax = False
+preTTFL=0
+preTTFR = 0
+preTTRL = 0
+preTTRR = 0
+preSuspFL = 0
+preSuspFR = 0
+preSuspRL = 0
+preSuspRR = 0
+metric=False
+speakingTemp = True
+speakingSusp = True
+speakingGear = True
 speakingCompass = False
 speakingElevation = False
 speakingSpeed = False
@@ -56,7 +77,7 @@ def set_stereo_panning(sound, panning):
 # Function 3: Adjust pitch
 def set_pitch(sound, pitch):
 	new_sample_rate = int(sound.frame_rate * (2 ** pitch))
-	return sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+	return sound._spawn(sound.raw_data, overrides={"	frame_rate"	: new_sample_rate})
 
 # Function 4: Adjust volume
 def set_volume(sound, volume):
@@ -97,7 +118,7 @@ def ash(sound_path, heading):
 
 	return sound
 
-def repeatSound(times, sound_file='beep.wav'):
+def repeatSound(times, sound_file="	beep.wav"	):
 	try:
 		# Load the sound file
 		sound = AudioSegment.from_file(sound_file)
@@ -136,7 +157,10 @@ def convertDir(degrees):
 	else:
 		return "Invalid degree"
 def speedConvert(speed_mps):
-	return speed_mps * 2.23694
+	if metric == False:
+		return speed_mps * 2.23694
+	if metric == True:
+		return speed_mps * 3.6
 def add_or_remove():
 	global speedMonitor
 	user_input = input("Enter an speed, whole numbers only: ")
@@ -170,33 +194,86 @@ def edit_Elevation_Sense():
 		print("Elevation sense set to "+str(num))
 	except ValueError:
 		print("Please enter a valid integer.")
+def edit_Front_Temps():
+	global maxTF
+	user_input = input("Enter a desired maximum front tire temp to monitor for, whole numbers only: ")
+	try:
+		# Convert input to integer
+		num = int(user_input)
+		# Change the max front temp to the desired number
+		maxTF=num
+		print("Max front ttemp set to "+str(num))
+	except ValueError:
+		print("Please enter a valid integer.")
+def edit_Rear_Temps():
+	global maxTR
+	user_input = input("Enter a desired maximum rear tire temp to monitor for, whole numbers only: ")
+	try:
+		# Convert input to integer
+		num = int(user_input)
+		# Change the max rear temp to the desired number
+		maxTR = num
+		print("Max rear ttemp set to "+str(num))
+	except ValueError:
+		print("Please enter a valid integer.")
 
 def edit_Speed_Monitor():
-	if keyboard.is_pressed('s'):
+	if keyboard.is_pressed("	s"	):
 		add_or_remove()
+def edit_TF_Monitor():
+	if keyboard.is_pressed("	f"	):
+		edit_Front_Temps()
+def edit_TR_Monitor():
+	if keyboard.is_pressed("	r"	):
+		edit_Rear_Temps()
+
 def edit_Elevation_Monitor():
-	if keyboard.is_pressed('e'):
+	if keyboard.is_pressed("	e"	):
 		edit_Elevation_Sense()
 
 def speaking_Toggle():
 	global speakingCompass
 	global speakingSpeed
 	global speakingElevation
-	if keyboard.is_pressed('z'):
+	global speakingTemp
+	global speakingSusp
+	global speakingGear
+	if keyboard.is_pressed("	v"	):
+		if speakingTemp == False:
+			speakingTemp = True
+			print("Screen reader announcements enabled for tire temps.")
+		else:
+			speakingTemp = False
+			print("Screen reader announcements disabled for tire temp.")
+	if keyboard.is_pressed("	b"	):
+		if speakingSusp == False:
+			speakingSusp = True
+			print("Screen reader announcements enabled for bottomed out suspension.")
+		else:
+			speakingSusp = False
+			print("Screen reader announcements disabled for bottomed out suspension.")
+	if keyboard.is_pressed("	n"	):
+		if speakingGear == False:
+			speakingGear = True
+			print("Screen reader announcements enabled for gears.")
+		else:
+			speakingGear = False
+			print("Screen reader announcements disabled for gears.")
+	if keyboard.is_pressed("	z"	):
 		if speakingCompass == False:
 			speakingCompass = True
 			print("Screen reader  compass enabled")
 		else:
 			speakingCompass = False
 			print("Screen reader compass disabled.")
-	if keyboard.is_pressed('x'):
+	if keyboard.is_pressed("	x"	):
 		if speakingSpeed == False:
 			speakingSpeed = True
 			print("Screen reader  speed enabled")
 		else:
 			speakingSpeed = False
 			print("Screen reader speed disabled.")
-	if keyboard.is_pressed('c'):
+	if keyboard.is_pressed("	c"	):
 		if speakingElevation == False:
 			speakingElevation = True
 			print("Screen reader  elevation enabled")
@@ -206,16 +283,26 @@ def speaking_Toggle():
 
 def audio_Compass_Toggle():
 	global audioCompass
-	if keyboard.is_pressed('a'):
+	if keyboard.is_pressed("	a"	):
 		if audioCompass == False:
 			audioCompass = True
 			print("Audio compass enabled")
 		else:
 			audioCompass = False
 			print("Audio compass disabled.")
+def measurement_Toggle():
+	global metric
+	if keyboard.is_pressed("	m"	):
+		if metric == False:
+			metric = True
+			print("Speed is now in kMPH.")
+		else:
+			metric = False
+			print("Speed is now in MPH.")
+
 def elevation_Sensor_Toggle():
 	global elevationSensor
-	if keyboard.is_pressed('w'):
+	if keyboard.is_pressed("	w"	):
 		if elevationSensor == False:
 			elevationSensor = True
 			print("Elevation sensor enabled")
@@ -224,7 +311,7 @@ def elevation_Sensor_Toggle():
 			print("Elevation sensor disabled.")
 def speed_Monitor_Toggle():
 	global speedMon
-	if keyboard.is_pressed('q'):
+	if keyboard.is_pressed("	q"	):
 		if speedMon == False:
 			speedMon = True
 			print("Speed monitor enabled.")
@@ -234,7 +321,7 @@ def speed_Monitor_Toggle():
 
 
 
-# Set the server's port
+# Set the server"	s port
 port = 5300
 
 # Create a socket object for UDP
@@ -243,26 +330,76 @@ server_socket.bind(('', port))
 
 print(f"Listening for packets on port {port}")
 speak(f"Listening for packets on port {port}")
+total_size = 1*4 + 1*4 + 27*4 + 4*4 + 20*4 + 5*4 + 17*4 + 1*2 + 6*1 + 3*1 + 5*4
 
 try:
 	# Continuously listen for packets
 	while True:
 		# Receive packets
-		data, addr = server_socket.recvfrom(2048)  # Adjust buffer size if necessary
-
+		data, addr = server_socket.recvfrom(332)  # Adjust buffer size if necessary
 		# Define the format string for unpacking
-		format_string = 'iI3f14f4i4f13f2i5f3i4f15fHI3B3b3f'
+		format_string = "	iI27f4i20f5i17fH6B4bfi"	
 		edit_Speed_Monitor()
 		edit_Elevation_Monitor()
+		edit_TF_Monitor()
+		edit_TR_Monitor()
 		# Check if the received data matches the expected size
-		if len(data) >= struct.calcsize(format_string):
+		if len(data) >= 0:
 			# Unpack the data according to the specified format
 			unpacked_data = struct.unpack(format_string, data[:struct.calcsize(format_string)])
 			execute_After(audio_Compass_Toggle,.15)
 			execute_After(speed_Monitor_Toggle,.15)
 			execute_After(elevation_Sensor_Toggle,.15)
 			execute_After(speaking_Toggle,.15)
+			execute_After(measurement_Toggle,.15)
 			# Print the unpacked data (or process/store it as needed)
+			curGear = unpacked_data[81]
+			if curGear != preGear and curGear != 11 and curGear != 0:
+				print_Speak(speakingGear,"Gear "+str(curGear))
+				preGear=curGear
+			elif curGear != preGear and curGear == 0:
+				print_Speak(speakingGear, "Reverse")
+				preGear=curGear
+			TTFL = unpacked_data[64]
+			TTFR = unpacked_data[65]
+			TTRL = unpacked_data[66]
+			TTRR = unpacked_data[67]
+			if TTFL >= maxTF and frontMax == False or TTFR >= maxTF and frontMax == False:
+				print_Speak(speakingTemp, "Front tires have exceeded "+str(maxTF)+" degrees. Front left is "+str(TTFL)+" and front right is "+str(TTFR)+".")
+				frontMax = True
+			if TTRL >= maxTR and rearMax == False or TTRR >= maxTR and rearMax == False:
+				print_Speak(speakingTemp, "Rear tires have exceeded "+str(maxTR)+" degrees")
+				rearMax = True
+			if TTFL < maxTF and TTFR < maxTF and frontMax == True:
+				print_Speak(speakingTemp, "Front tires have dropped below "+str(maxTF)+" degrees to "+str(TTFL)+" front left, and "+str(TTFR)+" front right.")
+				frontMax=False
+			if TTRL < maxTR and TTRR < maxTR and rearMax == True:
+				print_Speak(speakingTemp, "Rear tires have fallen below "+str(maxTR)+" degrees")
+				rearMax = False
+			suspFL = unpacked_data[17]
+			suspFR = unpacked_data[18]
+			suspRL = unpacked_data[19]
+			suspRR = unpacked_data[20]
+			if suspFL >= 1 and bottomedFL == False:
+				print_Speak(speakingSusp, "Front left suspension bottomed out")
+				bottomedFL = True
+			if suspFL < 1 and bottomedFL == True:
+				bottomedFL = False
+			if suspFR >= 1 and bottomedFR == False:
+				print_Speak(speakingSusp, "Front right suspension bottomed out")
+				bottomedFR = True
+			if suspFR < 1 and bottomedFR == True:
+				bottomedFR = False
+			if suspRL >= 1 and bottomedRL == False:
+				print_Speak(speakingSusp, "Rear left suspension bottomed out")
+				bottomedRL = True
+			if suspRL < 1 and bottomedRL == True:
+				bottomedRL = False
+			if suspRR >= 1 and bottomedRR == False:
+				print_Speak(speakingSusp, "Rear right suspension bottomed out")
+				bottomedRR = True
+			if suspRR < 1 and bottomedRR == True:
+				bottomedRR = False
 			if preElevation < unpacked_data[59] or preElevation > unpacked_data[59]:
 				curElevation = unpacked_data[59]
 				if abs(preElevation-curElevation) >= elevationSense:
@@ -295,13 +432,13 @@ try:
 			if accel == 1:
 				print_Speak(speakingSpeed, str(exceed)+" MPH exceeded.")
 				if speedMon == True:
-					repeatSound(speedMonitor.index(exceed)+1, 'speed.wav')
+					repeatSound(speedMonitor.index(exceed)+1, "	speed.wav"	)
 			if accel == 0:
 				print_Speak(speakingSpeed, "Dropped below"+str(exceed+1))
 				if speedMon == True:
-					repeatSound(speedMonitor.index(exceed+1), 'speed.wav')
+					repeatSound(speedMonitor.index(exceed+1), "	speed.wav"	)
 		else:
-			print("Received data is shorter than expected format.")
+			print("Received data is shorter than expected format at "+str(len(data))+".")
 
 except KeyboardInterrupt:
 	# Close the socket when interrupted (e.g., by Ctrl+C)

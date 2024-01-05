@@ -158,9 +158,23 @@ def ash(masterSound, heading):
 
 	# Adjust panning
 	sound = sound.pan(panning)
-	# Adjust pitch if heading is between 90 and 270 degrees
-	if 90 < heading < 270:
-		sound = set_pitch(sound, -2)
+	# Adjust pitch 
+	pitch=0
+	if heading > 270:
+		pitch= (heading-270)/90
+	if heading > 180 and heading < 270:
+		pitch= -1+((heading-180)/90)
+	if heading > 90 and heading < 180:
+		pitch = 1-(heading/90)
+	if heading > 0 and heading < 90:
+		pitch = 1-(heading/90)
+	if heading == 270 or heading == 90:
+		pitch=0
+	if heading == 0:
+		pitch=1
+	if heading == 180:
+		pitch =-1
+	sound = set_pitch(sound, pitch)
 	return sound
 def preload_compass_sounds(master_sound):
     compass_sounds = []
@@ -649,9 +663,9 @@ def processPacket():
 		if abs(clickDiff) >= compassSense and compassClicks == True:
 			preClick=curYaw
 			addSound('click', preYaw)
-		curDir = convertDir(curYaw)
+		curDir = convertDir(round(curYaw))
 		if(preDir!=curDir):
-			preDir = convertDir((unpacked_data[14]* (180 / math.pi))+180)
+			preDir = curDir
 			if audioCompass == True:
 				addSound('compass', preYaw)
 			print_Speak(speakingCompass, curDir)
@@ -694,15 +708,15 @@ try:
 		edit_TR_Monitor()
 		edit_Speed_Monitor()
 		edit_CompassSense()
-		execute_After(temp_Toggle,.15)
-		execute_After(susp_Toggle, .15)
-		execute_After(gear_Toggle,.15)
-		execute_After(audio_Compass_Toggle,.15)
-		execute_After(speed_Monitor_Toggle,.15)
-		execute_After(elevation_Sensor_Toggle,.15)
-		execute_After(speaking_Toggle,.15)
-		execute_After(measurement_Toggle,.15)
-		execute_After(benchmark_Toggle,.15)
+		execute_After(temp_Toggle,.3)
+		execute_After(susp_Toggle, .3)
+		execute_After(gear_Toggle,.3)
+		execute_After(audio_Compass_Toggle,.3)
+		execute_After(speed_Monitor_Toggle,.3)
+		execute_After(elevation_Sensor_Toggle,.3)
+		execute_After(speaking_Toggle,.3)
+		execute_After(measurement_Toggle,.3)
+		execute_After(benchmark_Toggle,.3)
 		if packed_data != []:
 			processPacket()
 		time.sleep(.05)

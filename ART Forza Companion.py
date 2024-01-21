@@ -5,11 +5,12 @@ import io
 import socket
 import struct
 import math
-import keyboard
 import accessible_output2.outputs.auto
 import threading
 import concurrent.futures
 import time
+import json
+import os
 pygame.mixer.init()
 #Variables
 bmMonitor=False
@@ -66,6 +67,258 @@ exceed=0
 preElevation=0
 elevationSense=3
 compassSense=10
+configuration_values = {
+	"Speed Interval": speedInterval,
+	"Speed Sensitivity": speedSense,
+	"Compass Sensitivity": compassSense,
+	"Elevation Sensitivity": elevationSense,
+	"Front Tire Temp": maxTF,
+	"Rear Tire Temp": maxTR,
+	"Benchmark Speed": bmSpeed
+}
+# Function to save configuration to a file
+def save_configuration(dict1, dict2, int_value):
+	current_directory = os.getcwd()
+	file_path = os.path.join(current_directory, "config.json")
+
+	config_data = {
+		"dict1": dict1,
+		"dict2": dict2,
+		"int_value": int_value
+	}
+
+	with open(file_path, 'w') as config_file:
+		json.dump(config_data, config_file)
+	speak("Configuration saved.")
+
+# Function to read and update configuration from a file
+def load_configuration():
+	current_directory = os.getcwd()
+	file_path = os.path.join(current_directory, "config.json")
+
+	try:
+		with open(file_path, 'r') as config_file:
+			config_data = json.load(config_file)
+			dict1 = config_data.get("dict1", {})
+			dict2 = config_data.get("dict2", {})
+			int_value = config_data.get("int_value", 0)
+			return dict1, dict2, int_value
+	except FileNotFoundError:
+		return  {label: False for label in [
+	"Speed Audio Toggle", "Elevation Audio Toggle", "Suspension Audio Toggle",
+	"Tire Temp Audio Toggle", "SR Speed Toggle", "SR Elevation Toggle",
+	"SR Compass Toggle", "SR Suspension Toggle", "SR Tire Temps Toggle",
+	"SR Gears Toggle", "Measurement Toggle", "Benchmark Toggle","Save Configuration"
+]}, {
+	"Speed Interval": None,
+	"Speed Sensitivity": None,
+	"Elevation Sensitivity": None,
+	"Compass Sensitivity": None,
+	"Front Tire Temp": None,
+	"Rear Tire Temp": None,
+	"Benchmark Speed": None
+}, 0  # Return default values if the file doesn't exist
+
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QComboBox, QLineEdit, QLabel
+from PyQt5.QtGui import QIntValidator
+
+# Define global variables
+audio_compass_options = ['off', 'Cardinal Directions', 'Clicks only', 'Cardinal and clicks']
+audio_compass_selection = 0
+
+button_states = {label: False for label in [
+	"Speed Audio Toggle", "Elevation Audio Toggle", "Suspension Audio Toggle",
+	"Tire Temp Audio Toggle", "SR Speed Toggle", "SR Elevation Toggle",
+	"SR Compass Toggle", "SR Suspension Toggle", "SR Tire Temps Toggle",
+	"SR Gears Toggle", "Measurement Toggle", "Benchmark Toggle","Save Configuration"
+]}
+
+value_variables = {
+	"Speed Interval": None,
+	"Speed Sensitivity": None,
+	"Elevation Sensitivity": None,
+	"Compass Sensitivity": None,
+	"Front Tire Temp": None,
+	"Rear Tire Temp": None,
+	"Benchmark Speed": None
+}
+
+class MainWindow(QMainWindow):
+	def __init__(self):
+		super().__init__()
+
+		self.setWindowTitle("Control Panels")
+		self.setGeometry(100, 100, 600, 500)
+
+		self.tab_widget = QTabWidget()
+		self.setCentralWidget(self.tab_widget)
+
+		self.add_audio_panel()
+		self.add_edit_panel()
+
+	def add_audio_panel(self):
+		panel = QWidget()
+		layout = QVBoxLayout()
+
+		for label in button_states.keys():
+			button = QPushButton(label)
+			button.clicked.connect(lambda checked, label=label: self.toggle_button(label))
+			layout.addWidget(button)
+
+		global_combo_audio_compass = QComboBox()
+		global_combo_audio_compass.addItems(audio_compass_options)
+		global_combo_audio_compass.currentIndexChanged.connect(self.audio_compass_changed)
+		layout.addWidget(global_combo_audio_compass)
+
+		panel.setLayout(layout)
+		self.tab_widget.addTab(panel, "Audio & Toggles")
+
+	def toggle_button(self, label):
+		global button_states
+		global configuration_values
+		global audio_compass_selection
+		if label == "Benchmark Toggle" and button_states[label] == False:
+			button_states[label] = not button_states[label]
+			speak("Bench mark in progress. Please reduce speed to 0 and engine RPM to idle")
+		elif label == "Benchmark Toggle" and button_states[label] == True:
+			button_states[label] = not button_states[label]
+			speak("Benchmark canceled.")
+		if label == "Save Configuration":
+			save_configuration(button_states, configuration_values, audio_compass_selection)
+
+		if label != "Benchmark Toggle" and label != "Save Configuration":
+			button_states[label] = not button_states[label]
+			speak(f"{label} toggled to {button_states[label]}")
+
+	def audio_compass_changed(self, index):
+		global audio_compass_selection
+		audio_compass_selection = index
+		speak(f"Audio compass option changed to {audio_compass_options[index]} ({index})")
+
+	def add_edit_panel(self):
+		panel = QWidget()
+		layout = QVBoxLayout()
+
+		global value_variables
+		for label_text in value_variables.keys():
+			hbox = QVBoxLayout()
+			lbl = QLabel(label_text)
+			edit = QLineEdit()
+			edit.setAccessibleName(label_text)
+			edit.setValidator(QIntValidator(0, 10000))
+			hbox.addWidget(lbl)
+			hbox.addWidget(edit)
+			value_variables[label_text] = edit
+			layout.addLayout(hbox)
+
+		submit_button = QPushButton("Submit")
+		submit_button.clicked.connect(self.submit_values)
+		layout.addWidget(submit_button)
+
+		panel.setLayout(layout)
+		self.tab_widget.addTab(panel, "Settings")
+
+	def submit_values(self):
+		global value_variables
+		all_values_valid = True
+
+		for label, edit in value_variables.items():
+			text = edit.text().strip()
+			if text and text.isdigit():
+				value_variables[label] = int(text)
+			elif text:
+				all_values_valid = False
+
+		if not all_values_valid:
+			speak("Please enter valid integer values in all fields.")
+		else:
+			speak("All values set.")
+def mainStart():
+	if __name__ == '__main__':
+		app = QApplication([])
+		main_window = MainWindow()
+		main_window.show()
+		app.exec_()
+def updateVars():
+	global configuration_values
+	global speedInterval
+	global speedSense
+	global elevationSense
+	global compassSense
+	global maxTF
+	global maxTR
+	global bmSpeed
+	global bmMonitor
+	global metric
+	global speakingTemp
+	global speakingSusp
+	global speakingGear
+	global speakingCompass
+	global speakingElevation
+	global speakingSpeed
+	global audioCompass
+	global compassClicks
+	global speedMon
+	global elevationSensor
+	global suspAudio
+	global tempAudio
+	global button_states
+	global value_variables
+	global audio_compass_selection
+	if isinstance(value_variables["Speed Interval"], int):
+		speedInterval=value_variables["Speed Interval"]
+		configuration_values["Speed Interval"] = speedInterval
+	if isinstance(value_variables["Speed Sensitivity"], int):
+		speedSense=value_variables["Speed Sensitivity"]
+		configuration_values["Speed Sensitivity"] = speedSense
+	if isinstance(value_variables["Elevation Sensitivity"], int):
+		elevationSense=value_variables["Elevation Sensitivity"]
+		configuration_values["Elevation Sensitivity"] = elevationSense
+	if isinstance(value_variables["Compass Sensitivity"], int):
+		compassSense=value_variables["Compass Sensitivity"]
+		configuration_values["Compass Sensitivity"] = compassSense
+	if isinstance(value_variables["Front Tire Temp"], int):
+		maxTF=value_variables["Front Tire Temp"]
+		configuration_values["Front Tire Temp"] = maxTF
+	if isinstance(value_variables["Rear Tire Temp"], int):
+		maxTR=value_variables["Rear Tire Temp"]
+		configuration_value["Rear Tire Temp"] = maxTR
+	if isinstance(value_variables["Benchmark Speed"], int):
+		bmSpeed=value_variables["Benchmark Speed"]
+		configuration_values["Benchmark Speed"] = bmSpeed
+	metric=button_states["Measurement Toggle"]
+	speakingTemp=button_states["SR Tire Temps Toggle"]
+	speakingSusp=button_states["SR Suspension Toggle"]
+	speakingGear=button_states["SR Gears Toggle"]
+	speakingCompass=button_states["SR Compass Toggle"]
+	speakingElevation=button_states["SR Elevation Toggle"]
+	speakingSpeed=button_states["SR Speed Toggle"]
+	if audio_compass_selection == 0:
+		audioCompass = False
+		compassClicks=False
+	elif audio_compass_selection == 1:
+		audioCompass=True
+		compassClicks=False
+	elif audio_compass_selection == 2:
+		audioCompass=False
+		compassClicks=True
+	elif audio_compass_selection == 3:
+		audioCompass=True
+		compassClicks=True
+	speedMon = button_states["Speed Audio Toggle"]
+	elevationSensor=button_states["Elevation Audio Toggle"]
+	suspAudio= button_states["Suspension Audio Toggle"]
+	tempAudio=button_states["Tire Temp Audio Toggle"]
+	bmMonitor = button_states["Benchmark Toggle"]
+	if bmMonitor == False:
+		armedBenchmark=False
+		startBenchmark=False
+		bmStartTime= 0
+		bmEndTime = 0
+
+
+
+
 #Wrapping the speech output to be more user friendly by defaulting the interrupt to on.
 def speak(text,interrupt=True):
 	o.output(text, interrupt)
@@ -275,245 +528,6 @@ def speedBenchMark(curRPM, idleRPM, curSpeed, curTime):
 			bmEndTime=curTime
 			bmTotalTime = (bmEndTime-bmStartTime)/1000
 			print_Speak(True,str(bmSpeed)+" "+metricString+" bench mark completed in "+str(bmTotalTime)+" seconds")
-def edit_SpeedMonitor():
-	global speedInterval
-	global speedSense
-	user_input = input("Enter desired speed interval to monitor for, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the speed interval to the desired number
-		speedInterval = num
-		print("Speed interval set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-	user_input = input("Enter desired speed sensitivity to monitor for, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the speed sense to the desired number
-		speedSense = num
-		print("Speed sense set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-
-
-def edit_Elevation_Sense():
-	global elevationSense
-	user_input = input("Enter a desired elevation interval for the elevation change monitor, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the elevation sense to the desired number
-		elevationSense=num
-		print("Elevation sense set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-def edit_Compass_Sense():
-	global compassSense
-	user_input = input("Enter desired interval for the compass clicks sensitivity, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the sense to the desired number
-		compassSense=num
-		print("Compass click sensitivity set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-
-def edit_Front_Temps():
-	global maxTF
-	user_input = input("Enter a desired maximum front tire temp to monitor for, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the max front temp to the desired number
-		maxTF=num
-		print("Max front ttemp set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-def edit_Rear_Temps():
-	global maxTR
-	user_input = input("Enter a desired maximum rear tire temp to monitor for, whole numbers only: ")
-	try:
-		# Convert input to integer
-		num = int(user_input)
-		# Change the max rear temp to the desired number
-		maxTR = num
-		print("Max rear ttemp set to "+str(num))
-	except ValueError:
-		print("Please enter a valid integer.")
-def edit_CompassSense():
-	if keyboard.is_pressed('u'):
-		edit_Compass_Sense()
-
-def edit_Speed_Monitor():
-	if keyboard.is_pressed('s'):
-		edit_SpeedMonitor()
-def edit_TF_Monitor():
-	if keyboard.is_pressed('f'):
-		edit_Front_Temps()
-def edit_TR_Monitor():
-	if keyboard.is_pressed('r'):
-		edit_Rear_Temps()
-
-def edit_Elevation_Monitor():
-	if keyboard.is_pressed('e'):
-		edit_Elevation_Sense()
-
-def speaking_Toggle():
-	global speakingCompass
-	global speakingSpeed
-	global speakingElevation
-	global speakingSusp
-	global speakingTemp
-	global speakingGear
-	if keyboard.is_pressed('z'):
-		if speakingCompass == False:
-			speakingCompass = True
-			print("Screen reader  compass enabled")
-		else:
-			speakingCompass = False
-			print("Screen reader compass disabled.")
-	if keyboard.is_pressed('x'):
-		if speakingSpeed == False:
-			speakingSpeed = True
-			print("Screen reader  speed enabled")
-		else:
-			speakingSpeed = False
-			print("Screen reader speed disabled.")
-	if keyboard.is_pressed('c'):
-		if speakingElevation == False:
-			speakingElevation = True
-			print("Screen reader  elevation enabled")
-		else:
-			speakingElevation = False
-			print("Screen reader elevation disabled.")
-	if keyboard.is_pressed('v'):
-		if speakingSusp == False:
-			speakingSusp = True
-			print("Screen reader  announcements of bottomed out suspension enabled")
-		else:
-			speakingSusp = False
-			print("Screen reader announcements of bottomed out suspension disabled.")
-	if keyboard.is_pressed('b'):
-		if speakingTemp == False:
-			speakingTemp = True
-			print("Screen reader  announcements of over heated front and rear tires enabled")
-		else:
-			speakingTemp = False
-			print("Screen reader announcements of over heated front and rear tires disabled.")
-	if keyboard.is_pressed('n'):
-		if speakingGear == False:
-			speakingGear = True
-			print("Screen reader  announcements of gears enabled")
-		else:
-			speakingGear = False
-			print("Screen reader announcements of gears disabled.")
-
-def audio_Compass_Toggle():
-	global audioCompass
-	global compassClicks
-	if keyboard.is_pressed('a'):
-		if audioCompass == False and compassClicks == False:
-			audioCompass = True
-			print("Audio compass enabled")
-		elif audioCompass == True and compassClicks == False:
-			audioCompass = True
-			print("Audio compass and clicks enabled")
-			compassClicks = True
-		elif audioCompass == True and compassClicks == True:
-			audioCompass = False
-			compassClicks = True
-			print("Only compass clicks enabled.")
-		else:
-			audioCompass = False
-			compassClicks=False
-			print("Audio compass and clicks disabled.")
-def susp_Toggle():
-	global suspAudio
-	if keyboard.is_pressed('y'):
-		if suspAudio == False:
-			suspAudio = True
-			print("Suspension audio enabled")
-		else:
-			suspAudio = False
-			print("Suspension audio disabled.")
-def benchmark_Toggle():
-	global bmMonitor
-	global bmSpeed
-	if keyboard.is_pressed('j'):
-		if bmMonitor==False:
-			user_input = input("Enter desired bench mark speed, whole numbers only: ")
-			try:
-				# Convert input to integer
-				num = int(user_input)
-				# Change the benchmark speed to the desired number
-				bmSpeed = num
-				print("Benchmark set for "+str(bmSpeed))
-			except ValueError:
-				print("Please enter a valid integer.")
-		if bmMonitor == False:
-			bmMonitor = True
-			print("Bench mark in progress. Please reduce speed to 0 and engine RPM to idle")
-		else:
-			bmMonitor = False
-			armedBenchmark=False
-			startBenchmark=False
-			bmStartTime= 0
-			bmEndTime = 0
-			print("Benchmarking ended..")
-
-def temp_Toggle():
-	global tempAudio
-	if keyboard.is_pressed('h'):
-		if tempAudio == False:
-			tempAudio = True
-			print("Tire temp audio enabled")
-		else:
-			tempAudio= False
-			print("Tire temp audio disabled.")
-def gear_Toggle():
-	global gearAudio
-	if keyboard.is_pressed('g'):
-		if gearAudio == False:
-			gearAudio = True
-			print("Gear audio enabled")
-		else:
-			gearAudio = False
-			print("Gear audio disabled.")
-
-def measurement_Toggle():
-	global metric
-	global metricString
-	if keyboard.is_pressed('m'):
-		if metric == False:
-			metricString="Kph"
-			metric = True
-			print("Speed is now in Kph.")
-		else:
-			metricString="Mph"
-			metric = False
-			print("Speed is now in Mph.")
-
-def elevation_Sensor_Toggle():
-	global elevationSensor
-	if keyboard.is_pressed('w'):
-		if elevationSensor == False:
-			elevationSensor = True
-			print("Elevation sensor enabled")
-		else:
-			elevationSensor = False
-			print("Elevation sensor disabled.")
-def speed_Monitor_Toggle():
-	global speedMon
-	if keyboard.is_pressed('q'):
-		if speedMon == False:
-			speedMon = True
-			print("Speed monitor enabled.")
-		else:
-			speedMon = False
-			print("Speed monitor disabled.")
 # Set the server's port
 port = 5300
 
@@ -683,13 +697,23 @@ def processPacket():
 		if speedInterval == 0 or curSpeedInt % speedInterval == 0:
 			print_Speak(speakingSpeed, str(int(curSpeed))+" "+metricString)
 
+def shutDown():
+	print("Stopping the server...")
+	pygame.mixer.quit()
+	packeting=False
+	time.sleep(2)
+	server_socket.close()
+	packetThread.join()
 
 
 
 
+mainThread = threading.Thread(target=mainStart)
 packetThread = threading.Thread(target=packetReceiver)
+button_states, value_variables, audio_compass_selection = load_configuration()
 try:
 	packetThread.start()
+	mainThread.start()
 	create_sound_thread('descend', descend)
 	create_sound_thread('ascend', ascend)
 	create_sound_thread('front temp', temp)
@@ -701,32 +725,16 @@ try:
 	create_sound_thread('speed', speed)
 	create_sound_thread('click', clickSounds)
 	create_sound_thread('compass', compassSounds)
+
 	while True:
-		edit_Speed_Monitor()
-		edit_Elevation_Monitor()
-		edit_TF_Monitor()
-		edit_TR_Monitor()
-		edit_Speed_Monitor()
-		edit_CompassSense()
-		execute_After(temp_Toggle,.3)
-		execute_After(susp_Toggle, .3)
-		execute_After(gear_Toggle,.3)
-		execute_After(audio_Compass_Toggle,.3)
-		execute_After(speed_Monitor_Toggle,.3)
-		execute_After(elevation_Sensor_Toggle,.3)
-		execute_After(speaking_Toggle,.3)
-		execute_After(measurement_Toggle,.3)
-		execute_After(benchmark_Toggle,.3)
+		updateVars()
 		if packed_data != []:
 			processPacket()
 		time.sleep(.05)
+		if mainThread.is_alive() == False:
+			shutDown()
+			break
 except KeyboardInterrupt:
 	# Close the socket when interrupted (e.g., by Ctrl+C)
-	print("Stopping the server...")
-	pygame.mixer.quit()
-	packeting=False
-	time.sleep(2)
-	server_socket.close()
-	packetThread.join()
-
+	shutDown()
 

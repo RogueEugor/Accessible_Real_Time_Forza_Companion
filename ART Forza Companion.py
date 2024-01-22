@@ -14,6 +14,8 @@ import os
 pygame.mixer.init()
 #Variables
 bmMonitor=False
+prePitch= 0
+preRoll = 0
 armedBenchmark=False
 startBenchmark = False
 bmSpeed = 60
@@ -147,7 +149,7 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 
-		self.setWindowTitle("Control Panels")
+		self.setWindowTitle("Accessible Real Time Forza Companion")
 		self.setGeometry(100, 100, 600, 500)
 
 		self.tab_widget = QTabWidget()
@@ -216,7 +218,7 @@ class MainWindow(QMainWindow):
 		layout.addWidget(submit_button)
 
 		panel.setLayout(layout)
-		self.tab_widget.addTab(panel, "Settings")
+		self.tab_widget.addTab(panel, "Sensitivity Settings")
 
 	def submit_values(self):
 		global value_variables
@@ -429,13 +431,15 @@ def ash(masterSound, heading):
 		pitch =-1
 	sound = set_pitch(sound, pitch)
 	return sound
+
+
 def preload_compass_sounds(master_sound):
-    compass_sounds = []
-    for heading in range(360):
-        adjusted_sound = ash(master_sound, heading)
-        sound_handle = export_and_load(adjusted_sound)
-        compass_sounds.append(sound_handle)
-    return compass_sounds
+	compass_sounds = []
+	for heading in range(360):
+		adjusted_sound = ash(master_sound, heading)
+		sound_handle = export_and_load(adjusted_sound)
+		compass_sounds.append(sound_handle)
+	return compass_sounds
 clickSounds = preload_compass_sounds(click)
 compassSounds = preload_compass_sounds(sound)
 def sound_thread_function(sound_name, soundHandle, index=None):
@@ -502,6 +506,7 @@ def speedConvert(speed_mps):
 	if metric == True:
 		return speed_mps * 3.6
 def speedBenchMark(curRPM, idleRPM, curSpeed, curTime):
+	global button_states
 	global bmMonitor
 	global armedBenchmark
 	global bmStartTime
@@ -523,6 +528,7 @@ def speedBenchMark(curRPM, idleRPM, curSpeed, curTime):
 			print("Timer started.")
 		if armedBenchmark == True and startBenchmark == True and speed >= bmSpeed:
 			bmMonitor = False
+			button_states["Benchmark Toggle"] = False
 			armedBenchmark = False
 			startBenchmark = False
 			bmEndTime=curTime
@@ -585,6 +591,8 @@ def processPacket():
 	global preSuspRL
 	global preSuspRR
 	global preYaw
+	global prePitch
+	global preRoll
 	global preDir
 	global preClick
 	global speedMonitor
@@ -592,6 +600,14 @@ def processPacket():
 	global preElevation
 	global elevationSense
 	global compassSense
+	curPitch = round(unpacked_data[15]*100)
+	curRoll = round(unpacked_data[16]*100)
+	if prePitch != curPitch:
+		prePitch = curPitch
+#		print_Speak(False, str(curPitch))
+	if curRoll != preRoll:
+#		print_Speak(True, str(curRoll))
+		preRoll = curRoll
 	curGear = unpacked_data[81]
 	if curGear != preGear and curGear != 11 and curGear != 0:
 		print_Speak(speakingGear,"Gear "+str(curGear))
